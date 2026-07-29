@@ -6,7 +6,7 @@ import os
 INPUT_FILE = "videos.csv"
 OUTPUT_DIR = "videos"
 
-VIDEOS_PER_FILE = 90000
+VIDEOS_PER_FILE = 10000
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
