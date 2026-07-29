@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   update:
@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y unzip gzip
+          sudo apt-get install -y unzip
 
       - name: Download latest CSV
         run: |
@@ -35,30 +35,30 @@ jobs:
           unzip -o export.zip
           mv xvideos.com-export-full.csv videos.csv
 
-      - name: Convert CSV to JSON
+      - name: Convert CSV to split JSON files
         run: |
           python convert.py
 
-      - name: Compress JSON
+      - name: Check generated files
         run: |
-          gzip -9 videos.json
-          ls -lh videos.json.gz
+          ls -lh videos/
+          du -sh videos/
 
-      - name: Upload compressed database to FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          port: 21
-          server-dir: /
-          local-dir: ./
-          dangerous-clean-slate: false
-          exclude: |
-            **
-            !videos.json.gz
-
-      - name: Cleanup
+      - name: Remove temporary files
         run: |
-          rm -f export.zip videos.csv videos.json.gz
+          rm -f export.zip videos.csv
+
+      - name: Commit and push database
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add videos/
+
+          if git diff --cached --quiet; then
+            echo "No changes."
+            exit 0
+          fi
+
+          git commit -m "Update XVideos database"
+          git push
